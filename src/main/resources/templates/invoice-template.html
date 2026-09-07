@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Tax Invoice</title>
+    <style type="text/css">
+        @page {
+            size: A4 portrait;
+            margin: 10mm 12mm 15mm 12mm;
+            @bottom-left {
+                content: "FastBills Invoicing • GST Compliant Rule 46";
+                font-family: 'FreeSans', sans-serif;
+                font-size: 7.5pt;
+                color: #64748b;
+            }
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-family: 'FreeSans', sans-serif;
+                font-size: 7.5pt;
+                color: #64748b;
+            }
+        }
+
+        body {
+            font-family: 'FreeSans', sans-serif;
+            font-size: 8.5pt;
+            line-height: 1.35;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #0284c7;
+            padding-bottom: 8px;
+        }
+
+        .header-table td {
+            vertical-align: top;
+        }
+
+        .logo-img {
+            max-height: 55px;
+            max-width: 180px;
+            margin-bottom: 6px;
+        }
+
+        .org-name {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin: 0 0 2px 0;
+        }
+
+        .org-details {
+            font-size: 8pt;
+            color: #475569;
+            line-height: 1.3;
+        }
+
+        .invoice-title-block {
+            text-align: right;
+        }
+
+        .invoice-title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #0284c7;
+            letter-spacing: 1px;
+            margin: 0 0 4px 0;
+        }
+
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8pt;
+            text-align: right;
+        }
+
+        .meta-table td {
+            padding: 1px 0;
+        }
+
+        .meta-label {
+            color: #64748b;
+            padding-right: 8px;
+        }
+
+        .meta-value {
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        /* Party Details (Billed To / Shipped To) */
+        .party-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+        }
+
+        .party-box {
+            width: 50%;
+            vertical-align: top;
+            padding: 6px 8px;
+            border: 1px solid #cbd5e1;
+            background-color: #f8fafc;
+        }
+
+        .party-box.right {
+            border-left: none;
+        }
+
+        .party-heading {
+            font-size: 8pt;
+            font-weight: bold;
+            color: #0369a1;
+            text-transform: uppercase;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 3px;
+            margin-bottom: 4px;
+        }
+
+        .party-name {
+            font-size: 9.5pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 2px;
+        }
+
+        .party-detail {
+            font-size: 8pt;
+            color: #334155;
+            line-height: 1.3;
+        }
+
+        /* Line Items Table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+        }
+
+        .items-table th {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 7.5pt;
+            font-weight: bold;
+            text-align: left;
+            padding: 5px 4px;
+            border: 1px solid #0f172a;
+        }
+
+        .items-table th.text-right,
+        .items-table td.text-right {
+            text-align: right;
+        }
+
+        .items-table th.text-center,
+        .items-table td.text-center {
+            text-align: center;
+        }
+
+        .items-table td {
+            padding: 5px 4px;
+            font-size: 8pt;
+            border-bottom: 1px solid #e2e8f0;
+            border-left: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+
+        .items-table tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+
+        /* Slab Summary Table */
+        .slab-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+        }
+
+        .slab-table th {
+            background-color: #e2e8f0;
+            color: #334155;
+            font-size: 7pt;
+            font-weight: bold;
+            text-align: right;
+            padding: 3px 4px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .slab-table td {
+            padding: 3px 4px;
+            font-size: 7.5pt;
+            text-align: right;
+            border: 1px solid #cbd5e1;
+        }
+
+        .slab-table th.text-left,
+        .slab-table td.text-left {
+            text-align: left;
+        }
+
+        /* Totals and Bottom Section */
+        .bottom-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        .bottom-table td {
+            vertical-align: top;
+        }
+
+        .bottom-left {
+            width: 58%;
+            padding-right: 12px;
+        }
+
+        .bottom-right {
+            width: 42%;
+        }
+
+        .totals-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .totals-table td {
+            padding: 3px 4px;
+            font-size: 8pt;
+        }
+
+        .totals-label {
+            color: #475569;
+            text-align: right;
+            padding-right: 8px;
+        }
+
+        .totals-value {
+            text-align: right;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .grand-total-row td {
+            border-top: 1.5px solid #0f172a;
+            border-bottom: 2px solid #0f172a;
+            background-color: #f1f5f9;
+            padding: 5px 4px;
+            font-size: 9.5pt;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .amount-in-words-box {
+            border: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+            padding: 6px 8px;
+            border-radius: 2px;
+            margin-bottom: 8px;
+        }
+
+        .amount-in-words-title {
+            font-size: 7.5pt;
+            font-weight: bold;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .amount-in-words-text {
+            font-size: 8.5pt;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .bank-box {
+            border: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+            padding: 6px 8px;
+            margin-bottom: 8px;
+            font-size: 7.5pt;
+        }
+
+        .bank-title {
+            font-weight: bold;
+            color: #0369a1;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 2px;
+        }
+
+        .bank-grid {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .bank-grid td {
+            padding: 1px 0;
+            font-size: 7.5pt;
+        }
+
+        .terms-box {
+            font-size: 7pt;
+            color: #64748b;
+            line-height: 1.3;
+            margin-top: 6px;
+        }
+
+        .signatory-box {
+            text-align: right;
+            margin-top: 14px;
+            padding-top: 6px;
+        }
+
+        .signatory-name {
+            font-weight: bold;
+            font-size: 8pt;
+            color: #0f172a;
+        }
+
+        .signatory-space {
+            height: 40px;
+        }
+
+        .signatory-label {
+            font-size: 7.5pt;
+            color: #64748b;
+            border-top: 1px dashed #cbd5e1;
+            display: inline-block;
+            padding-top: 3px;
+            width: 160px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <table class="header-table">
+        <tr>
+            <td style="width: 55%;">
+                <div th:if="${model.supplier.logoDataUri != null}">
+                    <img th:src="${model.supplier.logoDataUri}" alt="Logo" class="logo-img" />
+                </div>
+                <div class="org-name" th:text="${model.supplier.legalName}">FastBills Technologies Pvt Ltd</div>
+                <div class="org-details">
+                    <div th:if="${model.supplier.tradeName != null and !model.supplier.tradeName.isEmpty()}">
+                        <span th:text="${model.supplier.tradeName}">Trade Name</span>
+                    </div>
+                    <div>
+                        <span th:text="${model.supplier.addressLine1}">123 Business Avenue</span>
+                        <span th:if="${model.supplier.addressLine2 != null and !model.supplier.addressLine2.isEmpty()}" th:text="', ' + ${model.supplier.addressLine2}">, Suite 400</span>
+                    </div>
+                    <div>
+                        <span th:text="${model.supplier.city}">Bangalore</span>, 
+                        <span th:text="${model.supplier.stateName}">Karnataka</span> - 
+                        <span th:text="${model.supplier.pincode}">560001</span>
+                    </div>
+                    <div>
+                        <strong>GSTIN:</strong> <span th:text="${model.supplier.gstin}">29AABCF1234F1Z5</span> | 
+                        <strong>PAN:</strong> <span th:text="${model.supplier.pan}">AABCF1234F</span> |
+                        <strong>State Code:</strong> <span th:text="${model.supplier.stateCode}">29</span>
+                    </div>
+                    <div th:if="${model.supplier.email != null or model.supplier.phone != null}">
+                        <span th:if="${model.supplier.phone != null}"><strong>Tel:</strong> <span th:text="${model.supplier.phone}">+91 9876543210</span> </span>
+                        <span th:if="${model.supplier.email != null}"><strong>Email:</strong> <span th:text="${model.supplier.email}">billing@example.com</span></span>
+                    </div>
+                </div>
+            </td>
+            <td style="width: 45%;" class="invoice-title-block">
+                <div class="invoice-title" th:text="${model.title}">TAX INVOICE</div>
+                <table class="meta-table">
+                    <tr>
+                        <td class="meta-label">Invoice No:</td>
+                        <td class="meta-value" th:text="${model.invoice.invoiceNumber}">INV/2024-25/0001</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">Invoice Date:</td>
+                        <td class="meta-value" th:text="${model.invoice.invoiceDate}">07/09/2026</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">Due Date:</td>
+                        <td class="meta-value" th:text="${model.invoice.dueDate}">07/10/2026</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">Place of Supply:</td>
+                        <td class="meta-value">
+                            <span th:text="${model.invoice.placeOfSupplyCode}">29</span> - 
+                            <span th:text="${model.invoice.placeOfSupplyName}">Karnataka</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">Supply Type:</td>
+                        <td class="meta-value" th:text="${model.invoice.supplyType}">INTRA_STATE</td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">Reverse Charge:</td>
+                        <td class="meta-value" th:text="${model.invoice.isReverseCharge}">No</td>
+                    </tr>
+                    <tr th:if="${model.invoice.poNumber != null and !model.invoice.poNumber.isEmpty()}">
+                        <td class="meta-label">PO Ref:</td>
+                        <td class="meta-value" th:text="${model.invoice.poNumber}">PO-98721</td>
+                    </tr>
+                    <tr th:if="${model.invoice.collectionReference != null and !model.invoice.collectionReference.isEmpty()}">
+                        <td class="meta-label">Payment Ref:</td>
+                        <td class="meta-value" th:text="${model.invoice.collectionReference}">INV/2024-25/0001 - ACME</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Party Details (Billed To / Shipped To) -->
+    <table class="party-table">
+        <tr>
+            <td class="party-box">
+                <div class="party-heading">Details of Receiver (Billed To)</div>
+                <div class="party-name" th:text="${model.customer.legalName}">Acme Global Solutions India Pvt Ltd</div>
+                <div class="party-detail">
+                    <div th:if="${model.customer.tradeName != null and !model.customer.tradeName.isEmpty()}">
+                        <span th:text="${model.customer.tradeName}">Acme India</span>
+                    </div>
+                    <div>
+                        <span th:text="${model.customer.billingAddressLine1}">7th Main, Indiranagar</span>
+                        <span th:if="${model.customer.billingAddressLine2 != null and !model.customer.billingAddressLine2.isEmpty()}" th:text="', ' + ${model.customer.billingAddressLine2}">, 2nd Stage</span>
+                    </div>
+                    <div>
+                        <span th:text="${model.customer.billingCity}">Bangalore</span>, 
+                        <span th:text="${model.customer.billingStateName}">Karnataka</span> - 
+                        <span th:text="${model.customer.billingPincode}">560038</span>
+                    </div>
+                    <div>
+                        <strong>GSTIN:</strong> 
+                        <span th:text="${model.customer.isRegistered ? model.customer.gstin : 'Unregistered'}">29AAACG7890H1ZX</span>
+                    </div>
+                    <div>
+                        <strong>State Code:</strong> <span th:text="${model.customer.billingStateCode}">29</span> | 
+                        <strong>PAN:</strong> <span th:text="${model.customer.pan != null ? model.customer.pan : 'N/A'}">AAACG7890H</span>
+                    </div>
+                </div>
+            </td>
+            <td class="party-box right">
+                <div class="party-heading">Details of Consignee (Shipped To)</div>
+                <div class="party-name" th:text="${model.customer.legalName}">Acme Global Solutions India Pvt Ltd</div>
+                <div class="party-detail">
+                    <div>
+                        <span th:text="${model.customer.shippingAddressLine1 != null and !model.customer.shippingAddressLine1.isEmpty() ? model.customer.shippingAddressLine1 : model.customer.billingAddressLine1}">7th Main, Indiranagar</span>
+                    </div>
+                    <div>
+                        <span th:text="${model.customer.shippingCity != null and !model.customer.shippingCity.isEmpty() ? model.customer.shippingCity : model.customer.billingCity}">Bangalore</span>, 
+                        <span th:text="${model.customer.shippingStateName != null and !model.customer.shippingStateName.isEmpty() ? model.customer.shippingStateName : model.customer.billingStateName}">Karnataka</span> - 
+                        <span th:text="${model.customer.shippingPincode != null and !model.customer.shippingPincode.isEmpty() ? model.customer.shippingPincode : model.customer.billingPincode}">560038</span>
+                    </div>
+                    <div>
+                        <strong>State Code:</strong> 
+                        <span th:text="${model.customer.shippingStateCode != null and !model.customer.shippingStateCode.isEmpty() ? model.customer.shippingStateCode : model.customer.billingStateCode}">29</span>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Line Items Table -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 3%;" class="text-center">#</th>
+                <th style="width: 31%;">Item Description</th>
+                <th style="width: 8%;">HSN/SAC</th>
+                <th style="width: 6%;" class="text-right">Qty</th>
+                <th style="width: 6%;" class="text-center">Unit</th>
+                <th style="width: 9%;" class="text-right">Rate</th>
+                <th style="width: 8%;" class="text-right">Disc</th>
+                <th style="width: 10%;" class="text-right">Taxable</th>
+                <th th:if="${model.isIntraState}" style="width: 9%;" class="text-right">CGST</th>
+                <th th:if="${model.isIntraState}" style="width: 9%;" class="text-right">SGST</th>
+                <th th:if="${!model.isIntraState}" style="width: 18%;" class="text-right">IGST</th>
+                <th style="width: 11%;" class="text-right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="line : ${model.lines}">
+                <td class="text-center" th:text="${line.lineNumber}">1</td>
+                <td>
+                    <strong th:text="${line.itemDescription}">Enterprise Software Subscription</strong>
+                </td>
+                <td th:text="${line.hsnOrSacCode}">998313</td>
+                <td class="text-right" th:text="${line.quantity}">1.000</td>
+                <td class="text-center" th:text="${line.unitOfMeasure}">NOS</td>
+                <td class="text-right" th:text="${line.unitPrice}">10,000.00</td>
+                <td class="text-right" th:text="${line.discountAmount}">0.00</td>
+                <td class="text-right" th:text="${line.taxableValue}">10,000.00</td>
+                <td th:if="${model.isIntraState}" class="text-right">
+                    <span th:text="${line.cgstAmount}">900.00</span><br />
+                    <small style="color: #64748b;" th:text="'(' + ${line.cgstRatePercent} + '%)'">(9%)</small>
+                </td>
+                <td th:if="${model.isIntraState}" class="text-right">
+                    <span th:text="${line.sgstAmount}">900.00</span><br />
+                    <small style="color: #64748b;" th:text="'(' + ${line.sgstRatePercent} + '%)'">(9%)</small>
+                </td>
+                <td th:if="${!model.isIntraState}" class="text-right">
+                    <span th:text="${line.igstAmount}">1,800.00</span><br />
+                    <small style="color: #64748b;" th:text="'(' + ${line.igstRatePercent} + '%)'">(18%)</small>
+                </td>
+                <td class="text-right">
+                    <strong th:text="${line.lineTotal}">11,800.00</strong>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Rate Slab Summary Table (Rule 46 Requirement) -->
+    <div style="margin-bottom: 2px;">
+        <strong style="font-size: 7.5pt; color: #475569; text-transform: uppercase;">GST Tax Slab Summary:</strong>
+    </div>
+    <table class="slab-table">
+        <thead>
+            <tr>
+                <th class="text-left" style="width: 15%;">Tax Rate</th>
+                <th style="width: 25%;">Taxable Amount</th>
+                <th th:if="${model.isIntraState}" style="width: 20%;">CGST Amount</th>
+                <th th:if="${model.isIntraState}" style="width: 20%;">SGST Amount</th>
+                <th th:if="${!model.isIntraState}" style="width: 40%;">IGST Amount</th>
+                <th style="width: 20%;">Total Tax</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="slab : ${model.rateSlabs}">
+                <td class="text-left" th:text="${slab.taxRatePercent} + '% GST'">18% GST</td>
+                <td th:text="${slab.taxableValue}">10,000.00</td>
+                <td th:if="${model.isIntraState}" th:text="${slab.cgstAmount}">900.00</td>
+                <td th:if="${model.isIntraState}" th:text="${slab.sgstAmount}">900.00</td>
+                <td th:if="${!model.isIntraState}" th:text="${slab.igstAmount}">1,800.00</td>
+                <td th:text="${slab.totalTax}">1,800.00</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Totals and Payment Section -->
+    <table class="bottom-table">
+        <tr>
+            <td class="bottom-left">
+                <!-- Amount in Words -->
+                <div class="amount-in-words-box">
+                    <div class="amount-in-words-title">Total Amount (in words):</div>
+                    <div class="amount-in-words-text" th:text="${model.totals.amountInWords}">Eleven Thousand Eight Hundred Rupees Only</div>
+                </div>
+
+                <!-- Bank and Payment Details -->
+                <div class="bank-box" th:if="${model.bank.bankAccountNumber != null and !model.bank.bankAccountNumber.isEmpty()}">
+                    <div class="bank-title">Bank &amp; Payment Details</div>
+                    <table class="bank-grid">
+                        <tr>
+                            <td style="width: 32%; color: #64748b;">Bank Name:</td>
+                            <td><strong th:text="${model.bank.bankName}">HDFC Bank</strong></td>
+                        </tr>
+                        <tr>
+                            <td style="color: #64748b;">A/C Name:</td>
+                            <td><strong th:text="${model.bank.bankAccountName}">FastBills Technologies Pvt Ltd</strong></td>
+                        </tr>
+                        <tr>
+                            <td style="color: #64748b;">A/C Number:</td>
+                            <td><strong th:text="${model.bank.bankAccountNumber}">50200012345678</strong></td>
+                        </tr>
+                        <tr>
+                            <td style="color: #64748b;">IFSC Code:</td>
+                            <td><strong th:text="${model.bank.bankIfsc}">HDFC0001234</strong></td>
+                        </tr>
+                        <tr th:if="${model.bank.bankBranch != null and !model.bank.bankBranch.isEmpty()}">
+                            <td style="color: #64748b;">Branch:</td>
+                            <td th:text="${model.bank.bankBranch}">Indiranagar, Bangalore</td>
+                        </tr>
+                        <tr th:if="${model.bank.upiId != null and !model.bank.upiId.isEmpty()}">
+                            <td style="color: #64748b;">UPI ID:</td>
+                            <td><strong th:text="${model.bank.upiId}">fastbills@okhdfcbank</strong></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Terms -->
+                <div class="terms-box">
+                    <strong>Terms &amp; Conditions:</strong><br />
+                    <span th:text="${model.invoice.termsText != null and !model.invoice.termsText.isEmpty() ? model.invoice.termsText : '1. Payment is due by the due date specified on the invoice. 2. Cheque/Demand Draft to be drawn in favour of supplier legal name. 3. Disputes subject to local jurisdiction.'}">
+                        Payment is due by the due date specified on the invoice.
+                    </span>
+                </div>
+            </td>
+            <td class="bottom-right">
+                <!-- Financial Totals Box -->
+                <table class="totals-table">
+                    <tr>
+                        <td class="totals-label">Subtotal (before disc):</td>
+                        <td class="totals-value" th:text="'₹ ' + ${model.totals.subtotalBeforeDiscount}">₹ 10,000.00</td>
+                    </tr>
+                    <tr th:if="${model.totals.totalDiscount != '0.00'}">
+                        <td class="totals-label">Discount:</td>
+                        <td class="totals-value" th:text="'- ₹ ' + ${model.totals.totalDiscount}">- ₹ 0.00</td>
+                    </tr>
+                    <tr>
+                        <td class="totals-label">Taxable Value:</td>
+                        <td class="totals-value" th:text="'₹ ' + ${model.totals.taxableValue}">₹ 10,000.00</td>
+                    </tr>
+                    <tr th:if="${model.isIntraState}">
+                        <td class="totals-label">Total CGST:</td>
+                        <td class="totals-value" th:text="'₹ ' + ${model.totals.totalCgst}">₹ 900.00</td>
+                    </tr>
+                    <tr th:if="${model.isIntraState}">
+                        <td class="totals-label">Total SGST:</td>
+                        <td class="totals-value" th:text="'₹ ' + ${model.totals.totalSgst}">₹ 900.00</td>
+                    </tr>
+                    <tr th:if="${!model.isIntraState}">
+                        <td class="totals-label">Total IGST:</td>
+                        <td class="totals-value" th:text="'₹ ' + ${model.totals.totalIgst}">₹ 1,800.00</td>
+                    </tr>
+                    <tr th:if="${model.totals.totalCess != '0.00'}">
+                        <td class="totals-label">Total Cess:</td>
+                        <td class="totals-value" th:text="'₹ ' + ${model.totals.totalCess}">₹ 0.00</td>
+                    </tr>
+                    <tr>
+                        <td class="totals-label">Total Tax:</td>
+                        <td class="totals-value" th:text="'₹ ' + ${model.totals.totalTax}">₹ 1,800.00</td>
+                    </tr>
+                    <tr th:if="${model.totals.roundOff != '0.00'}">
+                        <td class="totals-label">Round Off:</td>
+                        <td class="totals-value" th:text="${model.totals.roundOff}">0.00</td>
+                    </tr>
+                    <tr class="grand-total-row">
+                        <td class="totals-label" style="text-align: right;">Grand Total:</td>
+                        <td class="totals-value" th:text="'₹ ' + ${model.totals.grandTotal}">₹ 11,800.00</td>
+                    </tr>
+                </table>
+
+                <!-- Authorized Signatory -->
+                <div class="signatory-box">
+                    <div class="signatory-name" th:text="'For ' + ${model.supplier.legalName}">For FastBills Technologies Pvt Ltd</div>
+                    <div class="signatory-space"></div>
+                    <div class="signatory-label">Authorized Signatory</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

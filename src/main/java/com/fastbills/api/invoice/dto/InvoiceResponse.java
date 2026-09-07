@@ -1,0 +1,62 @@
+package com.fastbills.api.invoice.dto;
+
+import com.fastbills.api.invoice.InvoiceState;
+import com.fastbills.api.tax.SupplyType;
+import com.fastbills.api.tax.TaxSlabSummary;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+public record InvoiceResponse(
+        UUID id,
+        UUID organisationId,
+        UUID customerId,
+        String customerLegalName,
+        String customerGstin,
+        UUID seriesId,
+        String invoiceNumber,
+        String previewInvoiceNumber,
+        Integer financialYear,
+        String financialYearShort,
+        LocalDate invoiceDate,
+        LocalDate dueDate,
+        String placeOfSupplyStateCode,
+        SupplyType supplyType,
+        Boolean isReverseCharge,
+        LocalDate deliveryOrAcceptanceDate,
+        Integer agreedCreditDays,
+        String collectionReference,
+        String poNumber,
+        LocalDate poDate,
+        String notes,
+        String termsText,
+        BigDecimal subtotalBeforeDiscount,
+        BigDecimal totalDiscount,
+        BigDecimal taxableValue,
+        BigDecimal totalCgst,
+        BigDecimal totalSgst,
+        BigDecimal totalIgst,
+        BigDecimal totalCess,
+        BigDecimal totalTax,
+        BigDecimal roundOff,
+        BigDecimal grandTotal,
+        String amountInWords,
+        InvoiceState state,
+        String paymentStatus,
+        BigDecimal totalReceived,
+        BigDecimal balanceAmount,
+        String ageingBucket,
+        Instant issuedAt,
+        UUID issuedByUserId,
+        Instant cancelledAt,
+        UUID cancelledByUserId,
+        String cancellationReason,
+        String pdfObjectKey,
+        Instant createdAt,
+        Instant updatedAt,
+        List<InvoiceLineResponse> lines,
+        List<TaxSlabSummary> slabSummaries
+) {}
