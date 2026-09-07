@@ -11,9 +11,9 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:fastbills}}
-    username: ${DB_USER:fastbills_app}
-    password: ${DB_PASSWORD:fastbills_secret}
+    url: ${DATABASE_URL:jdbc:postgresql://${PGHOST:${DB_HOST:localhost}}:${PGPORT:${DB_PORT:5432}}/${PGDATABASE:${DB_NAME:fastbills}}?sslmode=${PGSSLMODE:${DB_SSLMODE:prefer}}}
+    username: ${PGUSER:${DB_USER:fastbills_app}}
+    password: ${PGPASSWORD:${DB_PASSWORD:fastbills_secret}}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
