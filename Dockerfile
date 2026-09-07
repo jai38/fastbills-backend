@@ -16,15 +16,19 @@ RUN sh mvnw clean package -DskipTests -B
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Run as non-root user
-RUN addgroup -S fastbills && adduser -S fastbills -G fastbills
+# Create non-root user and pre-create storage directories with proper ownership
+RUN addgroup -S fastbills && adduser -S fastbills -G fastbills \
+    && mkdir -p /app/data/storage \
+    && chown -R fastbills:fastbills /app
+
+# Copy compiled JAR from builder stage and assign ownership
+COPY --from=builder --chown=fastbills:fastbills /workspace/target/fastbills-api-0.0.1-SNAPSHOT.jar app.jar
+
 USER fastbills
 
-# Copy compiled JAR from builder stage
-COPY --from=builder /workspace/target/fastbills-api-0.0.1-SNAPSHOT.jar app.jar
-
-# Dynamic port binding for Render/Heroku/AWS (defaults to 8080)
+# Dynamic port binding and storage directory defaults
 ENV PORT=8080
+ENV FASTBILLS_STORAGE_LOCAL_DIR=/app/data/storage
 EXPOSE 8080
 
 ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]
