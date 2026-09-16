@@ -248,6 +248,38 @@ class InvoiceServiceTest {
     }
 
     @Test
+    @DisplayName("Issue invoice: Rejects invoice date before the latest issued invoice date in the series")
+    void testIssueInvoice_RejectsDateBeforeLatestIssuedDate() {
+        UUID invoiceId = UUID.randomUUID();
+        Invoice draft = new Invoice();
+        draft.setId(invoiceId);
+        draft.setOrganisationId(organisationId);
+        draft.setCustomerId(customerId);
+        draft.setState(InvoiceState.DRAFT);
+        draft.setInvoiceDate(LocalDate.of(2026, 9, 8));
+        draft.setPlaceOfSupplyStateCode("27");
+        InvoiceLine line = new InvoiceLine();
+        line.setLineNumber(1);
+        line.setItemDescription("Test Service");
+        line.setQuantity(BigDecimal.ONE);
+        line.setUnitPrice(new BigDecimal("100.00"));
+        line.setTaxRatePercent(new BigDecimal("18.00"));
+        line.setTaxCategory(TaxCategory.TAXABLE);
+        draft.addLine(line);
+
+        when(invoiceRepository.findByIdAndOrganisationIdWithLines(invoiceId, organisationId))
+                .thenReturn(Optional.of(draft));
+        when(organisationRepository.findById(organisationId)).thenReturn(Optional.of(organisation));
+        when(customerRepository.findByIdAndOrganisationId(customerId, organisationId)).thenReturn(Optional.of(customer));
+        when(invoiceRepository.findLatestIssuedInvoiceDate(eq(organisationId), anyInt()))
+                .thenReturn(Optional.of(LocalDate.of(2026, 9, 10)));
+
+        assertThatThrownBy(() -> invoiceService.issueInvoice(organisationId, invoiceId, actorUserId, "127.0.0.1"))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("cannot be earlier than the latest issued invoice date (10-09-2026)");
+    }
+
+    @Test
     @DisplayName("Cancel invoice: Only OWNER role may cancel an issued invoice")
     void testCancelInvoice_StaffRole_Forbidden() {
         UUID invoiceId = UUID.randomUUID();

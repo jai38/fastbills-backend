@@ -134,4 +134,16 @@ public class InvoiceController {
         Page<InvoiceSummaryResponse> page = invoiceService.listInvoices(user.organisationId(), filter, pageable);
         return ResponseEntity.ok(page);
     }
+
+    @GetMapping("/latest-issued-date")
+    @Operation(summary = "Get latest issued invoice date", description = "Returns the latest date of an issued invoice in the series for sequential date validation")
+    public ResponseEntity<java.util.Map<String, String>> getLatestIssuedInvoiceDate(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate forDate,
+            @AuthenticationPrincipal AuthenticatedUser user
+    ) {
+        LocalDate latest = invoiceService.getLatestIssuedInvoiceDate(user.organisationId(), forDate);
+        java.util.Map<String, String> resp = new java.util.HashMap<>();
+        resp.put("latestIssuedInvoiceDate", latest != null ? latest.toString() : null);
+        return ResponseEntity.ok(resp);
+    }
 }

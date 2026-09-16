@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import java.time.format.DateTimeFormatter;
 
 import com.fastbills.api.invoice.pdf.InvoicePdfService;
 import com.fastbills.api.storage.StorageService;
@@ -249,6 +250,20 @@ public class InvoiceService {
 
         if (Boolean.TRUE.equals(customer.getIsArchived())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot issue an invoice for an archived customer");
+        }
+
+        // Chronological series check: invoice date cannot be earlier than the latest issued invoice date in the series
+        int fy = FinancialYear.fromDate(invoice.getInvoiceDate());
+        Optional<LocalDate> latestIssuedOpt = invoiceRepository.findLatestIssuedInvoiceDate(organisationId, fy);
+        if (latestIssuedOpt.isPresent() && invoice.getInvoiceDate().isBefore(latestIssuedOpt.get())) {
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    String.format("Invoice date (%s) cannot be earlier than the latest issued invoice date (%s) in the series",
+                            invoice.getInvoiceDate().format(fmt),
+                            latestIssuedOpt.get().format(fmt)
+                    )
+            );
         }
 
         // Recompute and freeze all lines and totals via pure tax engine
@@ -804,5 +819,12 @@ public class InvoiceService {
         byte[] pdfBytes = invoicePdfService.generatePdf(invoice, org, customer);
         ByteArrayResource resource = new ByteArrayResource(pdfBytes);
         return new InvoicePdfResource(resource, filename);
+    }
+
+    @Transactional(readOnly = true)
+    public LocalDate getLatestIssuedInvoiceDate(UUID organisationId, LocalDate forDate) {
+        LocalDate targetDate = forDate != null ? forDate : LocalDate.now();
+        int fy = FinancialYear.fromDate(targetDate);
+        return invoiceRepository.findLatestIssuedInvoiceDate(organisationId, fy).orElse(null);
     }
 }

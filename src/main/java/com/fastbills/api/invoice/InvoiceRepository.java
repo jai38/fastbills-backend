@@ -28,4 +28,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID>, JpaSpec
     );
 
     boolean existsByCustomerIdAndState(UUID customerId, InvoiceState state);
+
+    @Query("SELECT MAX(i.invoiceDate) FROM Invoice i WHERE i.organisationId = :organisationId AND i.financialYear = :financialYear AND i.state IN (com.fastbills.api.invoice.InvoiceState.ISSUED, com.fastbills.api.invoice.InvoiceState.CANCELLED)")
+    Optional<java.time.LocalDate> findLatestIssuedInvoiceDate(
+            @Param("organisationId") UUID organisationId,
+            @Param("financialYear") int financialYear
+    );
 }

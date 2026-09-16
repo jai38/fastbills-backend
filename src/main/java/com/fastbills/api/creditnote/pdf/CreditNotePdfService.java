@@ -33,7 +33,7 @@ import java.util.UUID;
 public class CreditNotePdfService {
 
     private static final Logger log = LoggerFactory.getLogger(CreditNotePdfService.class);
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     private final SpringTemplateEngine templateEngine;
     private final StorageService storageService;

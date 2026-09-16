@@ -143,7 +143,7 @@ class OrganisationServiceTest {
 
     @Test
     void testUploadLogo_RejectsOversizedFile() {
-        byte[] largeBytes = new byte[3 * 1024 * 1024]; // 3MB > 2MB limit
+        byte[] largeBytes = new byte[2 * 1024 * 1024]; // 2MB > 1MB limit
         MockMultipartFile oversized = new MockMultipartFile(
                 "file",
                 "huge.png",
@@ -153,7 +153,7 @@ class OrganisationServiceTest {
 
         assertThatThrownBy(() -> organisationService.uploadLogo(oversized))
                 .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("exceeds maximum limit of 2MB");
+                .hasMessageContaining("exceeds maximum limit of 1MB");
 
         verify(storageService, never()).store(anyString(), any(), anyString(), anyLong());
     }

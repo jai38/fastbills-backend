@@ -17,7 +17,7 @@ import java.util.UUID;
 @Service
 public class OrganisationService {
 
-    private static final long MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
+    private static final long MAX_LOGO_SIZE_BYTES = 1 * 1024 * 1024; // 1 MB
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
 
     private final OrganisationRepository organisationRepository;
@@ -94,7 +94,7 @@ public class OrganisationService {
         }
 
         if (file.getSize() > MAX_LOGO_SIZE_BYTES) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Logo file size exceeds maximum limit of 2MB");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Logo file size exceeds maximum limit of 1MB");
         }
 
         String contentType = file.getContentType();

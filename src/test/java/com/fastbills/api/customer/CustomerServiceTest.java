@@ -81,7 +81,7 @@ class CustomerServiceTest {
     @Test
     void testCreateCustomer_RejectsDuplicateLegalNameWithinTenant() {
         CreateCustomerRequest request = new CreateCustomerRequest(
-                "Duplicate Client", null, null, null, false,
+                "Duplicate Client", null, null, "ABCDE1234F", false,
                 null, null, null, "27", null, null, null, null, null, null, null, null, null, null, 30, null
         );
 
@@ -100,7 +100,7 @@ class CustomerServiceTest {
         CreateCustomerRequest request = new CreateCustomerRequest(
                 "Valid Client", null,
                 "27ABCDE1234F1Z5", // Maharashtra 27
-                null, false,
+                "ABCDE1234F", true,
                 null, null, null,
                 "29", // Karnataka 29 mismatch
                 null, null, null, null, null, null, null, null, null, null, 30, null
@@ -132,6 +132,26 @@ class CustomerServiceTest {
         assertThatThrownBy(() -> customerService.createCustomer(request))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("GSTIN is required when customer is marked as registered under GST");
+
+        verify(customerRepository, never()).save(any(Customer.class));
+    }
+
+    @Test
+    void testCreateCustomer_RejectsUnregisteredWithoutPan() {
+        CreateCustomerRequest request = new CreateCustomerRequest(
+                "Unregistered Client", null,
+                null,
+                null, // No PAN
+                false, // Unregistered
+                null, null, null, "27", null, null, null, null, null, null, null, null, null, null, 30, null
+        );
+
+        when(customerRepository.existsByOrganisationIdAndLegalNameIgnoreCase(tenantId, "Unregistered Client"))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> customerService.createCustomer(request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("PAN is mandatory for customers not registered under GST");
 
         verify(customerRepository, never()).save(any(Customer.class));
     }

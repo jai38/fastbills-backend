@@ -40,7 +40,7 @@ public class CustomerService {
         }
 
         // 2. GSTIN and state code validation
-        validateGstinAndState(request.isRegistered(), request.gstin(), request.billingStateCode());
+        validateGstinAndState(request.isRegistered(), request.gstin(), request.pan(), request.billingStateCode());
 
         Customer customer = new Customer();
         customer.setOrganisationId(orgId);
@@ -88,7 +88,7 @@ public class CustomerService {
             );
         }
 
-        validateGstinAndState(request.isRegistered(), request.gstin(), request.billingStateCode());
+        validateGstinAndState(request.isRegistered(), request.gstin(), request.pan(), request.billingStateCode());
 
         customer.setLegalName(trimmedLegalName);
         customer.setTradeName(request.tradeName() != null && !request.tradeName().isBlank() ? request.tradeName().trim() : null);
@@ -178,15 +178,31 @@ public class CustomerService {
         return customerRepository.findAll(spec, pageable).map(CustomerResponse::fromEntity);
     }
 
-    private void validateGstinAndState(Boolean isRegistered, String rawGstin, String billingStateCode) {
+    private void validateGstinAndState(Boolean isRegistered, String rawGstin, String rawPan, String billingStateCode) {
         String gstin = cleanString(rawGstin);
+        String pan = cleanString(rawPan);
         boolean registered = Boolean.TRUE.equals(isRegistered);
 
-        if (registered && (gstin == null || gstin.isEmpty())) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "GSTIN is required when customer is marked as registered under GST"
-            );
+        if (registered) {
+            if (gstin == null || gstin.isEmpty()) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "GSTIN is required when customer is marked as registered under GST"
+                );
+            }
+        } else {
+            if (pan == null || pan.isEmpty()) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "PAN is mandatory for customers not registered under GST"
+                );
+            }
+            if (!pan.matches("^[A-Z]{5}[0-9]{4}[A-Z]{1}$")) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Invalid PAN format (expected 10 characters: 5 letters, 4 digits, 1 letter)"
+                );
+            }
         }
 
         if (gstin != null && !gstin.isEmpty()) {

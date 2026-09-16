@@ -19,6 +19,7 @@ public record UpdateOrganisationProfileRequest(
         @Pattern(regexp = "^$|^[A-Z]{5}[0-9]{4}[A-Z]{1}$", message = "Invalid PAN format")
         String pan,
 
+        @NotBlank(message = "Registered business address is required")
         String addressLine1,
         String addressLine2,
         String city,
